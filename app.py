@@ -10,7 +10,7 @@ from moviepy import VideoFileClip
 # =====================================================================
 FONT_PATH = "VT323-Regular.ttf"
 FONT_SIZE = 30 
-STRETCH_FACTOR = 1.168  # 가로로 늘릴 비율 (1.0은 원본, 1.5는 1.5배 넓게)
+STRETCH_FACTOR = 1.176  # 가로로 늘릴 비율 (1.0은 원본, 1.5는 1.5배 넓게)
 
 def process_frame(get_frame, t, start_datetime, font):
     # 1. 원본 프레임 가져오기
@@ -19,7 +19,7 @@ def process_frame(get_frame, t, start_datetime, font):
     draw = ImageDraw.Draw(img)
     
     # 2. 기존 정보칸 가리기
-    draw.rectangle([(448, 4), (1469, 23)], fill="black")
+    draw.rectangle([(448, 4), (1476, 23)], fill="black")
     
     # 3. 현재 프레임의 시간 계산
     current_time = start_datetime + timedelta(seconds=t)
