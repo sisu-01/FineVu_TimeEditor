@@ -8,7 +8,6 @@ from moviepy import VideoFileClip
 # =====================================================================
 # 설정
 # =====================================================================
-# TARGET_START_TIME 하드코딩 제거됨
 FONT_PATH = "VT323-Regular.ttf"
 FONT_SIZE = 30 
 STRETCH_FACTOR = 1.168  # 가로로 늘릴 비율 (1.0은 원본, 1.5는 1.5배 넓게)
@@ -32,10 +31,7 @@ def process_frame(get_frame, t, start_datetime, font):
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # ---------------------------------------------------------
     # B. 여유 공간 확보
-    # ---------------------------------------------------------
-    # 하단이 잘리지 않도록 높이에 충분한 여유(10px)를 줍니다.
     padding_bottom = 10
     txt_img = Image.new("RGBA", (tw, th + padding_bottom), (0, 0, 0, 0))
     txt_draw = ImageDraw.Draw(txt_img)
@@ -47,11 +43,7 @@ def process_frame(get_frame, t, start_datetime, font):
     new_width = int(tw * STRETCH_FACTOR)
     stretched_txt = txt_img.resize((new_width, th + padding_bottom), Image.LANCZOS)
     
-    # ---------------------------------------------------------
     # D. 붙여넣기 위치 조정
-    # ---------------------------------------------------------
-    # 도화지 자체가 커졌으므로 y좌표를 기존 -1에서 더 위쪽(예: -4)으로 올려야 
-    # 검은색 박스 중앙에 글자가 배치됩니다.
     img.paste(stretched_txt, (447, -2), stretched_txt) 
     
     return np.array(img)
@@ -65,9 +57,6 @@ def main():
         return
     font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
     
-    # =================================================================
-    # [수정된 부분] 터미널에서 시작 시간을 입력받고 검증하는 로직
-    # =================================================================
     print("\n" + "="*50)
     print("블랙박스 영상에 덧씌울 시작 시간을 설정합니다.")
     print("아래 예시와 정확히 같은 형식으로 입력해주세요.")
@@ -78,28 +67,38 @@ def main():
         target_start_time = input("시작 시간 입력: ").strip()
         
         try:
-            # 사용자가 입력한 문자열이 올바른 날짜/시간 형식인지 확인
             start_datetime = datetime.strptime(target_start_time, "%Y%m%d-%Hh%Mm%Ss")
-            break # 정상적으로 변환되면 반복문을 탈출
+            break 
         except ValueError:
-            # 형식이 틀렸을 경우 안내 메시지 출력 후 다시 입력받음
             print("\n❌ 입력 형식이 올바르지 않습니다!")
             print("다시 입력해주세요. (예시: 20260101-20h13m25s)\n")
-    # =================================================================
             
-    video_files = glob.glob("source/*.mp4")
+    # .avi 파일과 .mp4 파일을 모두 찾도록 확장
+    video_files = glob.glob("source/*.avi") + glob.glob("source/*.mp4")
     
     if not video_files:
-        print("source 폴더에 변환할 영상이 없습니다.")
+        print("source 폴더에 변환할 영상(.avi 또는 .mp4)이 없습니다.")
         return
 
     print(f"\n총 {len(video_files)}개의 영상 변환을 시작합니다...\n")
 
     for file_path in video_files:
-        filename = os.path.basename(file_path)
-        output_path = os.path.join("done", f"fixed_{filename}")
+        filename = os.path.basename(file_path) # 예: yyyymmdd-00h00m00s_E.avi
         
-        print(f"작업 시작: {filename}")
+        # 파일명에서 확장자를 제외한 부분과 확장자 분리
+        name_without_ext, _ = os.path.splitext(filename)
+        
+        # '_E' 등 원본 영상의 접미사가 있다면 추출 (전/후방 카메라 구분 등을 위해)
+        if '_' in name_without_ext:
+            suffix = name_without_ext[name_without_ext.find('_'):] # 예: '_E'
+        else:
+            suffix = ""
+            
+        # 새로운 파일명 생성 (사용자입력시간 + 접미사 + .mp4)
+        new_filename = f"{target_start_time}{suffix}.mp4"
+        output_path = os.path.join("done", new_filename)
+        
+        print(f"작업 시작: {filename} -> {new_filename}")
         
         clip = VideoFileClip(file_path)
         
